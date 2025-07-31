@@ -56,14 +56,19 @@ The server provides three essential memory management tools:
 
 5. Configure your environment variables in the `.env` file (see Configuration section)
 
-### Using Docker (Recommended)
+### Using Docker with BuildKit (Recommended)
 
-1. Build the Docker image:
+1. Enable Docker BuildKit for faster, parallel builds:
    ```bash
-   docker build -t mcp/mem0 --build-arg PORT=8050 .
+   export DOCKER_BUILDKIT=1
    ```
 
-2. Create a `.env` file based on `.env.example` and configure your environment variables
+2. Build the optimized Docker image:
+   ```bash
+   docker build --progress=plain -t mcp-chromadb .
+   ```
+
+3. Create a `.env` file based on `.env.example` and configure your environment variables
 
 ## Configuration
 
@@ -98,19 +103,58 @@ The MCP server will essentially be run as an API endpoint that you can then conn
 
 With stdio, the MCP client iself can spin up the MCP server, so nothing to run at this point.
 
-### Using Docker
+### Using Docker with BuildKit
 
 #### SSE Transport
 
 ```bash
-docker run --env-file .env -p:8050:8050 mcp/mem0
+# Run with docker-compose (recommended)
+docker-compose up -d
+
+# Or run manually
+docker run --env-file .env -p 8050:8050 mcp-chromadb
 ```
 
-The MCP server will essentially be run as an API endpoint within the container that you can then connect to with config shown below.
+The MCP server will run as an API endpoint that you can connect to with the configuration shown below.
 
 #### Stdio Transport
 
-With stdio, the MCP client iself can spin up the MCP server container, so nothing to run at this point.
+With stdio, the MCP client itself can spin up the MCP server container, so nothing to run at this point.
+
+## Quick Start Commands
+
+### **Enable BuildKit (Essential)**
+```bash
+export DOCKER_BUILDKIT=1
+```
+
+### **Build & Run**
+```bash
+# Build with BuildKit optimization
+docker build --progress=plain -t mcp-chromadb .
+
+# Run with docker-compose
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+```
+
+### **Manual Docker Run**
+```bash
+docker run -d \
+  --name mcp-chromadb \
+  -p 8050:8050 \
+  -v ./chroma_db:/app/chroma_db \
+  -v ./exports:/app/exports \
+  -e PYTHONUNBUFFERED=1 \
+  mcp-chromadb
+```
+
+For detailed Docker setup and BuildKit optimization guide, see [DOCKER_BUILDKIT_GUIDE.md](DOCKER_BUILDKIT_GUIDE.md).
 
 ## Integration with MCP Clients
 

@@ -1,1 +1,172 @@
+# ============================================================================
+# OPTIMIZED .dockerignore for MCP ChromaDB with Micromamba + UV
+# This file aggressively excludes unnecessary files to minimize build context
+# ============================================================================
+
+# Environment and secrets
 .env
+.env.*
+!.env.example
+
+# Version control (NEVER include in Docker builds)
+.git/
+.gitignore
+.gitattributes
+.github/
+
+# Python cache and virtual environments (major bloat sources)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+ENV/
+.conda/
+.cache/
+
+# Development tools and IDEs (unnecessary in containers)
+.qodo/
+.vscode/
+.idea/
+.vs/
+*.swp
+*.swo
+*~
+.editorconfig
+
+# Documentation (exclude ALL markdown except README)
+*.md
+!README.md
+
+# Docker files (prevent recursive copying)
+Dockerfile*
+docker-compose*.yml
+docker-build*.sh
+docker-scripts.sh
+quick-start*.sh
+
+# Build artifacts and logs (can be large)
+*.log
+logs/
+build/
+dist/
+*.egg-info/
+.eggs/
+wheels/
+
+# OS generated files (unnecessary bloat)
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Test files and coverage (not needed in production)
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+tests/
+test_*/
+*_test.py
+*test*.py
+
+# Temporary files (potential bloat)
+tmp/
+temp/
+*.tmp
+*.temp
+.temporary/
+
+# Large data files (MUST be mounted as volumes)
+chroma_db/
+exports/
+data/
+datasets/
+models/
+weights/
+checkpoints/
+*.pkl
+*.pickle
+*.h5
+*.hdf5
+*.parquet
+
+# IDE and editor files (unnecessary)
+*.sublime-project
+*.sublime-workspace
+.vscode/
+.idea/
+*.iml
+
+# Package manager files (keep only essential)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Jupyter notebooks (can be large)
+.ipynb_checkpoints/
+*.ipynb
+
+# Type checking and linting
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pylint.d/
+.ruff_cache/
+
+# Backup and archive files
+*.bak
+*.backup
+*.old
+*.orig
+*.save
+*.tar
+*.tar.gz
+*.zip
+*.rar
+
+# Media files (usually not needed in containers)
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.svg
+*.ico
+*.mp4
+*.avi
+*.mov
+*.pdf
+
+# Configuration files that shouldn't be in containers
+.env.local
+.env.development
+.env.test
+.env.production
+config.local.*
+settings.local.*
+
+# Large Python packages that should be installed via conda/uv
+site-packages/
+lib/python*/
+include/python*/
+
+# Conda/Mamba specific
+.conda/
+.mamba/
+pkgs/
+conda-meta/
+
+# UV specific
+.uv/

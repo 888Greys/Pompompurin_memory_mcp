@@ -19,7 +19,11 @@ def get_mem0_client():
     llm_provider = os.getenv('LLM_PROVIDER')
     llm_api_key = os.getenv('LLM_API_KEY')
     llm_model = os.getenv('LLM_CHOICE')
+    
+    # Get embedding configuration
+    embedding_provider = os.getenv('EMBEDDING_PROVIDER', llm_provider)
     embedding_model = os.getenv('EMBEDDING_MODEL_CHOICE')
+    embedding_api_key = os.getenv('EMBEDDING_API_KEY', llm_api_key)
     
     # Initialize config dictionary
     config = {}
@@ -34,6 +38,11 @@ def get_mem0_client():
                 "max_tokens": 2000,
             }
         }
+        
+        # Handle different base URLs (Groq uses OpenAI-compatible API)
+        llm_base_url = os.getenv('LLM_BASE_URL')
+        if llm_base_url and llm_base_url != "https://api.openai.com/v1":
+            config["llm"]["config"]["base_url"] = llm_base_url
         
         # Set API key in environment if not already set
         if llm_api_key and not os.environ.get("OPENAI_API_KEY"):
@@ -58,8 +67,21 @@ def get_mem0_client():
         if llm_base_url:
             config["llm"]["config"]["ollama_base_url"] = llm_base_url
     
-    # Configure embedder based on provider
-    if llm_provider == 'openai':
+    # Configure embedder based on embedding provider
+    if embedding_provider == 'google':
+        config["embedder"] = {
+            "provider": "google",
+            "config": {
+                "model": embedding_model or "gemini-embedding-001",
+                "embedding_dims": 768  # Gemini embedding dimensions
+            }
+        }
+        
+        # Set Google API key in environment
+        if embedding_api_key and not os.environ.get("GOOGLE_API_KEY"):
+            os.environ["GOOGLE_API_KEY"] = embedding_api_key
+    
+    elif embedding_provider == 'openai' or llm_provider == 'openai':
         config["embedder"] = {
             "provider": "openai",
             "config": {
@@ -69,10 +91,10 @@ def get_mem0_client():
         }
         
         # Set API key in environment if not already set
-        if llm_api_key and not os.environ.get("OPENAI_API_KEY"):
-            os.environ["OPENAI_API_KEY"] = llm_api_key
+        if embedding_api_key and not os.environ.get("OPENAI_API_KEY"):
+            os.environ["OPENAI_API_KEY"] = embedding_api_key
     
-    elif llm_provider == 'ollama':
+    elif embedding_provider == 'ollama' or llm_provider == 'ollama':
         config["embedder"] = {
             "provider": "ollama",
             "config": {
@@ -82,17 +104,25 @@ def get_mem0_client():
         }
         
         # Set base URL for Ollama if provided
-        embedding_base_url = os.getenv('LLM_BASE_URL')
+        embedding_base_url = os.getenv('EMBEDDING_BASE_URL', os.getenv('LLM_BASE_URL'))
         if embedding_base_url:
             config["embedder"]["config"]["ollama_base_url"] = embedding_base_url
     
     # Configure Supabase vector store
+    # Determine embedding dimensions based on the embedding provider
+    if embedding_provider == 'google':
+        embedding_dims = 768  # Gemini embeddings
+    elif embedding_provider == 'openai':
+        embedding_dims = 1536  # OpenAI embeddings
+    else:
+        embedding_dims = 768  # Default for Ollama and others
+    
     config["vector_store"] = {
         "provider": "supabase",
         "config": {
             "connection_string": os.environ.get('DATABASE_URL', ''),
             "collection_name": "mem0_memories",
-            "embedding_model_dims": 1536 if llm_provider == "openai" else 768
+            "embedding_model_dims": embedding_dims
         }
     }
 

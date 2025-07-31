@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  # Main MCP ChromaDB service using micromamba + uv
+  mcp-chromadb:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PORT: 8050
+    container_name: mcp-chromadb
+    ports:
+      - "8050:8050"
+    environment:
+      # Server configuration
+      - TRANSPORT=sse
+      - HOST=0.0.0.0
+      - PORT=8050
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      
+      # ChromaDB configuration
+      - CHROMA_DB_PATH=/app/chroma_db
+      - CHROMA_COLLECTION_NAME=mcp_memory
+      
+      # Performance optimizations
+      - OMP_NUM_THREADS=4
+      - MKL_NUM_THREADS=4
+      - NUMBA_NUM_THREADS=4
+      
+    volumes:
+      # Persistent storage for ChromaDB
+      - ./chroma_db:/app/chroma_db
+      - ./exports:/app/exports
+      # Optional: Mount source code for development
+      # - ./src:/app/src:ro
+      
+    restart: unless-stopped
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8050/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Resource limits for optimal performance
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '1.0'
+
+  # Optional: Development service with hot reload
+  mcp-chromadb-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder  # Use builder stage for development
+      args:
+        PORT: 8051
+    container_name: mcp-chromadb-dev
+    ports:
+      - "8051:8051"
+    environment:
+      - TRANSPORT=sse
+      - HOST=0.0.0.0
+      - PORT=8051
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - DEVELOPMENT=true
+    volumes:
+      - ./src:/app/src
+      - ./chroma_db_dev:/app/chroma_db
+      - ./exports:/app/exports
+    restart: unless-stopped
+    profiles:
+      - development
+    command: ["python", "-m", "uvicorn", "src.main_chromadb:app", "--host", "0.0.0.0", "--port", "8051", "--reload"]
+
+networks:
+  default:
+    name: mcp-chromadb-network
+    driver: bridge
+
+volumes:
+  # Named volumes for better data management
+  chroma_data:
+    driver: local
+  exports_data:
+    driver: local
